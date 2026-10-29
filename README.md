@@ -1,379 +1,424 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Dosen - Rekap & Kontrol Presensi 2026C</title>
+    <title>Portofolio - Neolene Putri Kusuma Wardhani</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        ocean: {
+                            deep: '#010a15', 
+                            mid: '#073259',
+                            cyan: '#0083B0',
+                            light: '#00B4DB'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body {
+            background: linear-gradient(to bottom, #00B4DB 0%, #0083B0 40%, #073259 80%, #010a15 100%);
+            background-attachment: fixed;
+            color: #f8fafc;
+            min-height: 100vh;
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        #bubbleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0; /* Di belakang konten utama */
+            pointer-events: none; /* Agar tidak menghalangi klik */
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            border-radius: 1rem;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            transform: translateY(-3px);
+            transition: all 0.3s ease;
+        }
+
+        .spongebob-swimming {
+            position: fixed;
+            bottom: 3%;
+            z-index: 5;
+            opacity: 0.9;
+            pointer-events: none;
+            width: 130px;
+            animation: swimAcross 25s linear infinite;
+        }
+
+        @keyframes swimAcross {
+            0% { left: -150px; transform: scaleX(1) translateY(0px) rotate(5deg); }
+            25% { transform: scaleX(1) translateY(-30px) rotate(-5deg); }
+            49% { left: 110%; transform: scaleX(1) translateY(0px); }
+            50% { left: 110%; transform: scaleX(-1) translateY(0px); }
+            75% { transform: scaleX(-1) translateY(-30px) rotate(-5deg); }
+            100% { left: -150px; transform: scaleX(-1) translateY(0px) rotate(5deg); }
+        }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen">
+<body class="antialiased font-sans relative pb-20">
+    
+    <canvas id="bubbleCanvas"></canvas>
+    
+    <img src="https://media.giphy.com/media/l1Et0Z20iE9QxIuuQ/giphy.gif" alt="SpongeBob Swimming" class="spongebob-swimming">
 
-    <!-- Header / Navbar Dosen -->
-    <nav class="bg-indigo-900 text-white shadow-md border-b border-indigo-800 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-indigo-600 p-2.5 rounded-xl shadow-inner">
-                        <i class="fas fa-user-tie text-xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-bold text-lg leading-tight">Portal Dosen</h1>
-                        <p class="text-xs text-indigo-300">Rekap & Kontrol Presensi Kelas 2026C</p>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-lg font-medium flex items-center space-x-1.5 transition shadow">
-                        <i class="fas fa-file-excel"></i>
-                        <span>Ekspor Excel</span>
-                    </button>
-                    <button onclick="resetData()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3 py-2 rounded-lg font-medium flex items-center space-x-1.5 transition shadow">
-                        <i class="fas fa-undo"></i>
-                        <span>Reset Data</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-
-        <!-- Panel Kontrol Sesi Absen Mandiri -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <i class="fas fa-broadcast-tower text-indigo-600"></i> Kontrol Sesi Absen Mandiri Mahasiswa
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Pertemuan</label>
-                    <select id="adminMeetingSelect" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-indigo-500">
-                        <!-- Filled by JS -->
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">PIN Sesi Absen</label>
-                    <input type="text" id="adminPinInput" value="1234" maxlength="6" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm font-mono text-center tracking-widest font-bold">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Status Sesi</label>
-                    <div id="sessionBadge" class="p-2.5 rounded-xl text-center text-xs font-bold bg-slate-100 text-slate-600 border">
-                        TUTUP
+    <main class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 space-y-8">
+        
+        <header class="glass-card p-8 md:p-12">
+            <div class="flex flex-col md:flex-row items-center md:items-start gap-8">
+                
+                <div class="shrink-0">
+                    <div class="w-40 h-40 md:w-48 md:h-48 rounded-full bg-gradient-to-tr from-cyan-300 to-blue-500 p-1.5 shadow-[0_0_20px_rgba(6,182,212,0.6)]">
+                        <div class="w-full h-full rounded-full bg-ocean-mid overflow-hidden border-4 border-transparent flex items-center justify-center">
+                            <img src="1000272646.png" alt="Neolene Putri Kusuma Wardhani" class="w-full h-full object-cover">
+                        </div>
                     </div>
                 </div>
-                <div>
-                    <button id="toggleSessionBtn" onclick="toggleSession()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm">
-                        Buka Sesi Presensi
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Metric Cards -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
-                <div class="p-3 bg-blue-100 text-blue-600 rounded-xl"><i class="fas fa-users text-lg"></i></div>
-                <div>
-                    <p class="text-[11px] text-slate-500 font-medium">Total Mahasiswa</p>
-                    <p class="text-lg font-bold text-slate-800">45 Mahasiswa</p>
-                </div>
-            </div>
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
-                <div class="p-3 bg-emerald-100 text-emerald-600 rounded-xl"><i class="fas fa-user-check text-lg"></i></div>
-                <div>
-                    <p class="text-[11px] text-slate-500 font-medium">Pertemuan 1 - 7</p>
-                    <p class="text-lg font-bold text-emerald-600">100% Hadir</p>
-                </div>
-            </div>
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
-                <div class="p-3 bg-amber-100 text-amber-600 rounded-xl"><i class="fas fa-clock text-lg"></i></div>
-                <div>
-                    <p class="text-[11px] text-slate-500 font-medium">Sesi Aktif</p>
-                    <p id="activeSessionInfo" class="text-lg font-bold text-slate-800">Pertemuan 8</p>
-                </div>
-            </div>
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
-                <div class="p-3 bg-indigo-100 text-indigo-600 rounded-xl"><i class="fas fa-sync text-lg"></i></div>
-                <div>
-                    <p class="text-[11px] text-slate-500 font-medium">Status Sinkronisasi</p>
-                    <p class="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Live Sync
+                
+                <div class="flex-1 text-center md:text-left flex flex-col justify-center">
+                    <h1 class="text-3xl md:text-5xl font-bold text-white tracking-tight mb-2 drop-shadow-lg">
+                        Neolene Putri Kusuma Wardhani
+                    </h1>
+                    <p class="text-lg md:text-xl text-cyan-100 font-medium mb-4 drop-shadow-md">
+                        Mahasiswa Pendidikan Teknologi Informasi | Universitas Negeri Surabaya
                     </p>
+                    
+                    <p class="text-sm text-gray-200 leading-relaxed mb-6 max-w-3xl">
+                        Saya tertarik ke bidang data entry dan data analysts, serta memiliki ketertarikan kuat pada fotografi. Saya adalah individu yang rajin, teliti, dan disiplin dalam setiap pekerjaan.
+                    </p>
+                    
+                    <div class="flex flex-wrap justify-center md:justify-start gap-3">
+                        <a href="mailto:neowardhani8@gmail.com" class="px-5 py-2.5 bg-white/10 hover:bg-cyan-500/30 backdrop-blur-md border border-cyan-300/30 rounded-full transition-all text-sm font-medium flex items-center gap-2 shadow-lg">
+                            <i class="fas fa-envelope text-cyan-300"></i> Email
+                        </a>
+                        <a href="https://www.linkedin.com/in/neolene-putri-kusuma-wardhani-8a36ab442" target="_blank" class="px-5 py-2.5 bg-white/10 hover:bg-blue-500/30 backdrop-blur-md border border-blue-300/30 rounded-full transition-all text-sm font-medium flex items-center gap-2 shadow-lg">
+                            <i class="fab fa-linkedin text-blue-300"></i> LinkedIn
+                        </a>
+                        <a href="https://github.com/neolenee" target="_blank" class="px-5 py-2.5 bg-white/10 hover:bg-gray-500/30 backdrop-blur-md border border-gray-300/30 rounded-full transition-all text-sm font-medium flex items-center gap-2 shadow-lg">
+                            <i class="fab fa-github text-gray-200"></i> GitHub
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
+        </header>
 
-        <!-- Tabel Rekapitulasi Presensi Dosen -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-4 border-b border-slate-200 flex flex-col md:flex-row justify-between items-center gap-3">
-                <h3 class="font-bold text-slate-800 flex items-center gap-2 text-sm">
-                    <i class="fas fa-list-check text-indigo-600"></i> Rekapitulasi Presensi Mahasiswa (Pertemuan 1–16)
-                </h3>
-                <div class="w-full md:w-64">
-                    <input type="text" id="adminSearchInput" oninput="renderTable()" placeholder="Cari Nama atau NIM..." class="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-xs focus:ring-2 focus:ring-indigo-500">
-                </div>
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+            
+            <!-- Kolom Kiri -->
+            <div class="md:col-span-4 space-y-8">
+                
+                <section class="glass-card p-6">
+                    <h2 class="text-lg font-semibold text-cyan-300 mb-4 flex items-center gap-2 border-b border-white/10 pb-2">
+                        <i class="fas fa-id-card"></i> Identitas
+                    </h2>
+                    <ul class="text-sm text-gray-200 space-y-3">
+                        <li class="flex flex-col"><span class="text-cyan-400 text-xs font-semibold uppercase tracking-wider">Nama Lengkap</span> <span class="font-medium">Neolene Putri Kusuma Wardhani</span></li>
+                        <li class="flex flex-col"><span class="text-cyan-400 text-xs font-semibold uppercase tracking-wider">NIM</span> <span class="font-medium">26050974168</span></li>
+                        <li class="flex flex-col"><span class="text-cyan-400 text-xs font-semibold uppercase tracking-wider">Program Studi</span> <span class="font-medium">Pendidikan Teknologi Informasi</span></li>
+                    </ul>
+                </section>
+
+                <section class="glass-card p-6">
+                    <h2 class="text-lg font-semibold text-cyan-300 mb-4 flex items-center gap-2 border-b border-white/10 pb-2">
+                        <i class="fas fa-graduation-cap"></i> Pendidikan
+                    </h2>
+                    <div class="space-y-5">
+                        <div class="relative pl-4 border-l-2 border-cyan-500/50">
+                            <div class="absolute w-3 h-3 bg-cyan-400 rounded-full -left-[7px] top-1 shadow-[0_0_8px_#22d3ee]"></div>
+                            <h3 class="font-semibold text-white text-sm">Universitas Negeri Surabaya</h3>
+                            <p class="text-xs text-cyan-200 mt-1">Agustus 2026 - Sekarang</p>
+                        </div>
+                        <div class="relative pl-4 border-l-2 border-cyan-500/30">
+                            <div class="absolute w-3 h-3 bg-gray-400 rounded-full -left-[7px] top-1"></div>
+                            <h3 class="font-medium text-gray-200 text-sm">SMA Perguruan Rakyat 2 Jakarta</h3>
+                            <p class="text-xs text-gray-400 mt-1">2023 - 2026</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="glass-card p-6">
+                    <h2 class="text-lg font-semibold text-cyan-300 mb-4 flex items-center gap-2 border-b border-white/10 pb-2">
+                        <i class="fas fa-running"></i> Aktivitas
+                    </h2>
+                    <ul class="space-y-3 text-sm text-gray-200">
+                        <li class="flex items-start gap-3 bg-white/5 p-2 rounded border border-white/5">
+                            <i class="fas fa-camera text-cyan-400 mt-0.5"></i>
+                            <span>Fotografi & Dokumentasi</span>
+                        </li>
+                        <li class="flex items-start gap-3 bg-white/5 p-2 rounded border border-white/5">
+                            <i class="fas fa-users-cog text-cyan-400 mt-0.5"></i>
+                            <span>Penanggung Jawab (PJ) Mata Kuliah</span>
+                        </li>
+                        <li class="flex items-start gap-3 bg-white/5 p-2 rounded border border-white/5">
+                            <i class="fas fa-university text-cyan-400 mt-0.5"></i>
+                            <span>Berpartisipasi aktif dalam kegiatan akademik dan kampus</span>
+                        </li>
+                    </ul>
+                </section>
+
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-xs text-left">
-                    <thead class="bg-slate-800 text-slate-200 uppercase font-semibold">
-                        <tr>
-                            <th class="p-2 border-b border-slate-700 text-center">No</th>
-                            <th class="p-2 border-b border-slate-700">NIM</th>
-                            <th class="p-2 border-b border-slate-700 min-w-[180px]">Nama Mahasiswa</th>
-                            <!-- Columns 1 to 16 -->
-                            <script>
-                                for(let i=1; i<=16; i++) {
-                                    document.write(`<th class="p-1 border-b border-slate-700 text-center min-w-[34px] ${i<=7?'bg-slate-700 text-emerald-400':''}">${i}</th>`);
-                                }
-                            </script>
-                            <th class="p-2 border-b border-slate-700 text-center">% Hadir</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminTableBody" class="divide-y divide-slate-200">
-                        <!-- Loaded dynamically -->
-                    </tbody>
-                </table>
+
+            <!-- Kolom Kanan -->
+            <div class="md:col-span-8 space-y-8">
+                
+                <section class="glass-card p-6 md:p-8">
+                    <h2 class="text-xl font-semibold text-cyan-300 mb-4 flex items-center gap-2 border-b border-white/10 pb-2">
+                        <i class="fas fa-layer-group"></i> Keahlian & Keterampilan
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <!-- Hard Skills -->
+                        <div>
+                            <h3 class="text-sm font-semibold text-white mb-3 uppercase tracking-wider bg-white/5 inline-block px-3 py-1 rounded">Hard Skills</h3>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-cyan-900/40 text-cyan-100 text-xs rounded-full border border-cyan-500/30">Data Entry</span>
+                                <span class="px-3 py-1 bg-cyan-900/40 text-cyan-100 text-xs rounded-full border border-cyan-500/30">Administrasi</span>
+                                <span class="px-3 py-1 bg-cyan-900/40 text-cyan-100 text-xs rounded-full border border-cyan-500/30">Microsoft Excel & Google Sheets</span>
+                                <span class="px-3 py-1 bg-cyan-900/40 text-cyan-100 text-xs rounded-full border border-cyan-500/30">Microsoft 365</span>
+                                <span class="px-3 py-1 bg-cyan-900/40 text-cyan-100 text-xs rounded-full border border-cyan-500/30">Manajemen Stok</span>
+                                <span class="px-3 py-1 bg-cyan-900/40 text-cyan-100 text-xs rounded-full border border-cyan-500/30">Pengolahan Data Sederhana</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Soft Skills -->
+                        <div>
+                            <h3 class="text-sm font-semibold text-white mb-3 uppercase tracking-wider bg-white/5 inline-block px-3 py-1 rounded">Soft Skills</h3>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-blue-900/40 text-blue-100 text-xs rounded-full border border-blue-500/30">Pelayanan Pelanggan</span>
+                                <span class="px-3 py-1 bg-blue-900/40 text-blue-100 text-xs rounded-full border border-blue-500/30">Komunikasi Interpersonal</span>
+                                <span class="px-3 py-1 bg-blue-900/40 text-blue-100 text-xs rounded-full border border-blue-500/30">Ketelitian</span>
+                                <span class="px-3 py-1 bg-blue-900/40 text-blue-100 text-xs rounded-full border border-blue-500/30">Manajemen Waktu</span>
+                                <span class="px-3 py-1 bg-blue-900/40 text-blue-100 text-xs rounded-full border border-blue-500/30">Disiplin</span>
+                                <span class="px-3 py-1 bg-blue-900/40 text-blue-100 text-xs rounded-full border border-blue-500/30">Koordinasi & Kepemimpinan</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-semibold text-white mb-3 uppercase tracking-wider bg-white/5 inline-block px-3 py-1 rounded">Kemampuan Praktis & Tools</h3>
+                        <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-300">
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-cyan-400"></i> Fotografi & Dokumentasi Kegiatan</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-cyan-400"></i> Menyusun Dokumen & Laporan</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-check text-cyan-400"></i> Pembuatan Materi Presentasi</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-tools text-cyan-400"></i> Microsoft Word, Excel, PowerPoint</li>
+                            <li class="flex items-center gap-2"><i class="fas fa-tools text-cyan-400"></i> Aplikasi Pengeditan Foto Sederhana</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="glass-card p-6 md:p-8">
+                    <h2 class="text-xl font-semibold text-cyan-300 mb-4 flex items-center gap-2 border-b border-white/10 pb-2">
+                        <i class="fas fa-briefcase"></i> Pengalaman Kerja
+                    </h2>
+                    
+                    <div class="bg-gradient-to-r from-white/5 to-transparent rounded-lg p-5 border border-white/10 relative overflow-hidden group hover:border-cyan-500/50 transition-all">
+                        <i class="fas fa-jellyfish absolute -bottom-6 right-0 text-8xl text-cyan-500/5 group-hover:text-cyan-500/10 transition-all transform -rotate-12"></i>
+                        
+                        <div class="flex justify-between items-start flex-wrap gap-2 mb-2 relative z-10">
+                            <h3 class="font-bold text-white text-lg">Pramuniaga & Pelayanan Pelanggan</h3>
+                            <span class="text-xs font-semibold bg-cyan-500/20 text-cyan-200 px-3 py-1 rounded-full border border-cyan-500/40">2024 - 2025</span>
+                        </div>
+                        <p class="text-sm font-medium text-cyan-300 mb-4 relative z-10">An-Nasya Fried Chicken</p>
+                        
+                        <ul class="list-none space-y-2 text-sm text-gray-300 relative z-10 pl-2">
+                            <li class="flex items-start gap-3">
+                                <i class="fas fa-circle text-[8px] text-cyan-500 mt-1.5"></i>
+                                <span>Melayani kebutuhan pelanggan dengan ramah dan sopan, serta menjelaskan produk yang tersedia.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fas fa-circle text-[8px] text-cyan-500 mt-1.5"></i>
+                                <span>Mengurus transaksi pembayaran dan perhitungan keuangan harian dengan teliti.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fas fa-circle text-[8px] text-cyan-500 mt-1.5"></i>
+                                <span>Memeriksa dan menyusun stok barang agar tetap rapi dan tercatat dengan benar.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i class="fas fa-circle text-[8px] text-cyan-500 mt-1.5"></i>
+                                <span>Membuat catatan laporan penjualan harian secara sederhana dan teratur.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="glass-card p-6 md:p-8">
+                    <h2 class="text-xl font-semibold text-cyan-300 mb-4 flex items-center gap-2 border-b border-white/10 pb-2">
+                        <i class="fas fa-certificate"></i> Sertifikasi
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        
+                        <!-- Sertifikat 1 -->
+                        <div class="bg-gradient-to-br from-white/10 to-transparent border border-cyan-500/30 p-5 rounded-lg hover:border-cyan-400 transition-colors shadow-lg flex flex-col justify-between h-full">
+                            <div>
+                                <div class="flex items-start justify-between mb-3">
+                                    <i class="fab fa-microsoft text-3xl text-cyan-400"></i>
+                                    <span class="text-[10px] font-bold bg-cyan-900/70 text-cyan-100 px-2.5 py-1 rounded border border-cyan-500/50">Jan 2025</span>
+                                </div>
+                                <h3 class="font-bold text-white text-base mb-1">Berkolaborasi dengan Microsoft 365</h3>
+                                <p class="text-xs font-semibold text-cyan-200 mb-2">Penyelenggara: Cakap</p>
+                                <p class="text-xs text-gray-300 mb-4 leading-relaxed">Menguasai penggunaan Microsoft 365 untuk kerja kolaborasi dan produktivitas.</p>
+                            </div>
+                            <a href="https://upskill.cakap.com/sertifikat-saya/J2EA41ED6B" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-300 hover:text-white transition-colors hover:underline bg-white/5 w-fit px-3 py-1.5 rounded">
+                                <i class="fas fa-link"></i> Lihat Sertifikat
+                            </a>
+                        </div>
+
+                        <!-- Sertifikat 2 -->
+                        <div class="bg-gradient-to-br from-white/10 to-transparent border border-white/10 p-5 rounded-lg hover:border-blue-400 transition-colors shadow-lg flex flex-col justify-between h-full">
+                            <div>
+                                <div class="flex items-start justify-between mb-3">
+                                    <i class="fas fa-brain text-3xl text-blue-400"></i>
+                                    <span class="text-[10px] font-bold bg-blue-900/70 text-blue-100 px-2.5 py-1 rounded border border-blue-500/50">Des 2025</span>
+                                </div>
+                                <h3 class="font-bold text-white text-base mb-1">Belajar Dasar AI</h3>
+                                <p class="text-xs font-semibold text-blue-200 mb-2">Penyelenggara: Dicoding Indonesia</p>
+                                <p class="text-xs text-gray-300 leading-relaxed">Mempelajari fundamental kecerdasan buatan dan penerapannya.</p>
+                            </div>
+                            <p class="text-[10px] text-gray-400 mt-4"><i class="fas fa-clock"></i> Berlaku hingga: Desember 2028</p>
+                        </div>
+
+                    </div>
+                </section>
+                
+                <section class="glass-card p-6 md:p-8 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-cyan-900/50 to-blue-900/50 border-cyan-500/30">
+                    <div class="text-center sm:text-left">
+                        <h3 class="text-lg font-bold text-white">Unduh Curriculum Vitae</h3>
+                        <p class="text-sm text-cyan-100/80">Simpan salinan profil lengkap saya dalam format PDF.</p>
+                    </div>
+                    <a href="CV_Neolene Putri Kusuma Wardhani_2.pdf" download class="shrink-0 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-semibold rounded-full shadow-[0_0_15px_rgba(6,182,212,0.6)] transition-all hover:scale-105 flex items-center gap-2 border border-cyan-200/50">
+                        <i class="fas fa-file-pdf"></i> Download CV
+                    </a>
+                </section>
+
             </div>
         </div>
+        
+        <footer class="mt-12 text-center text-sm text-cyan-200/60 pb-8">
+            <p>&copy; 2026 Neolene Putri Kusuma Wardhani. <br class="md:hidden">Didesain dengan Tema Bawah Laut 🌊 🧽</p>
+        </footer>
 
-    </div>
+    </main>
 
     <script>
-        const INITIAL_STUDENTS = [
-            {"nim": "26050974010", "nama": "Rani Laili Fithriyani"},
-            {"nim": "26050974027", "nama": "Rendy Ardika Putra Pratama"},
-            {"nim": "26050974031", "nama": "Salza Maulidya Anjani"},
-            {"nim": "26050974052", "nama": "Lauhil Ikhsani"},
-            {"nim": "26050974060", "nama": "Efanes William Patiaraja Silaban"},
-            {"nim": "26050974068", "nama": "Riska Alfiana"},
-            {"nim": "26050974069", "nama": "Ardy Prasetyo Afandy"},
-            {"nim": "26050974073", "nama": "Qayla Meisyahila Aniem"},
-            {"nim": "26050974077", "nama": "Kakung Adhityatalenta"},
-            {"nim": "26050974082", "nama": "Eka Kartika Sari"},
-            {"nim": "26050974086", "nama": "Kharisma Qurotta A'yunni"},
-            {"nim": "26050974091", "nama": "Adela Al Alaz"},
-            {"nim": "26050974092", "nama": "Zahran rafif Ariffuddin"},
-            {"nim": "26050974094", "nama": "Mochmmad Rifani Rohman"},
-            {"nim": "26050974099", "nama": "Saylendra Surya Agung"},
-            {"nim": "26050974105", "nama": "Chuzayn Ibadillah Almuqarrabin"},
-            {"nim": "26050974108", "nama": "Hafizh Abrizam Deswantara"},
-            {"nim": "26050974110", "nama": "Bahruddin Kendilwessy"},
-            {"nim": "26050974111", "nama": "Putri Rizki Ardana"},
-            {"nim": "26050974112", "nama": "Muhammad Fathih Ali Arrahman"},
-            {"nim": "26050974118", "nama": "Lingga Bagus Bayuanggara"},
-            {"nim": "26050974120", "nama": "Nurul Aini"},
-            {"nim": "26050974122", "nama": "Muhammad Adnan Sabriila"},
-            {"nim": "26050974126", "nama": "Raisah Sharliz Maherummisa"},
-            {"nim": "26050974128", "nama": "Muhammad Shafrizal Al Ghozali"},
-            {"nim": "26050974138", "nama": "Ayuni Putri Arifianti"},
-            {"nim": "26050974139", "nama": "Nugroho Sutarko"},
-            {"nim": "26050974140", "nama": "Achmad Alamil Huda"},
-            {"nim": "26050974141", "nama": "Firnando Astrian Ramadhani"},
-            {"nim": "26050974144", "nama": "Chelsea Negar Kuncoro"},
-            {"nim": "26050974153", "nama": "Imtiaz Ahmad"},
-            {"nim": "26050974155", "nama": "Achmad Fardhan Khafid"},
-            {"nim": "26050974156", "nama": "Diva Qurrota A'yunin"},
-            {"nim": "26050974160", "nama": "Himmah Qadriyah Almu'in"},
-            {"nim": "26050974161", "nama": "Marco Ardiansyah Putra"},
-            {"nim": "26050974165", "nama": "Achmad Qodri Azizi"},
-            {"nim": "26050974166", "nama": "Muhammad Farrel Ivansyah Putra"},
-            {"nim": "26050974168", "nama": "Neolene Putri Kusuma Wardhani"},
-            {"nim": "26050974169", "nama": "Nauraffa Rayyano"},
-            {"nim": "26050974173", "nama": "Muhammad Alif Farhan"},
-            {"nim": "26050974174", "nama": "Mohammad Rafi Baihaqi"},
-            {"nim": "26050974175", "nama": "Reihan Soma Sudarman"},
-            {"nim": "26050974178", "nama": "Raihanun"},
-            {"nim": "26050974180", "nama": "Ahmad Raka Saputra"},
-            {"nim": "26050974181", "nama": "Rizky Yulief Estiawan"}
-        ];
+        // Logika HTML Canvas untuk Animasi Gelembung yang lebih halus
+        const canvas = document.getElementById('bubbleCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let bubblesArray = [];
 
-        let studentsData = [];
-        let attendanceData = {};
-        let activeSession = { meeting: 8, isOpen: false, pin: "1234" };
+        // Mengatur ukuran canvas agar sesuai dengan layar
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
 
-        window.onload = function() {
-            loadData();
-            initMeetingSelect();
-            renderTable();
-            updateSessionUI();
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-            // Real-time synchronization when student submits attendance in another tab/window
-            window.addEventListener('storage', function(e) {
-                if (e.key === 'pti_2026c_attendance' || e.key === 'pti_2026c_session') {
-                    loadData();
-                    renderTable();
-                    updateSessionUI();
+        // Kelas Bubble
+        class Bubble {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                // Mulai dari bawah layar
+                this.y = canvas.height + Math.random() * 300; 
+                this.radius = Math.random() * 10 + 2; // Ukuran bervariasi
+                this.speedY = Math.random() * 1.5 + 0.5; // Kecepatan naik
+                this.speedX = (Math.random() - 0.5) * 0.5; // Goyangan ke kiri/kanan
+                // Transparansi putih
+                this.opacity = Math.random() * 0.3 + 0.1; 
+            }
+
+            update() {
+                this.y -= this.speedY; // Bergerak ke atas
+                this.x += this.speedX; // Bergerak ke samping sedikit
+                
+                // Jika gelembung keluar layar atas, reset posisinya ke bawah
+                if (this.y < -this.radius) {
+                    this.y = canvas.height + this.radius;
+                    this.x = Math.random() * canvas.width;
                 }
-            });
-        };
-
-        function loadData() {
-            const savedStudents = localStorage.getItem('pti_2026c_students');
-            studentsData = savedStudents ? JSON.parse(savedStudents) : INITIAL_STUDENTS;
-            if (!savedStudents) localStorage.setItem('pti_2026c_students', JSON.stringify(INITIAL_STUDENTS));
-
-            const savedAttendance = localStorage.getItem('pti_2026c_attendance');
-            if (savedAttendance) {
-                attendanceData = JSON.parse(savedAttendance);
-            } else {
-                studentsData.forEach(s => {
-                    attendanceData[s.nim] = {};
-                    for(let m=1; m<=7; m++) {
-                        attendanceData[s.nim][m] = { status: 'Hadir', timestamp: '2026-09-01 08:00', note: 'Terabsen Otomatis' };
-                    }
-                });
-                localStorage.setItem('pti_2026c_attendance', JSON.stringify(attendanceData));
             }
 
-            const savedSession = localStorage.getItem('pti_2026c_session');
-            if (savedSession) activeSession = JSON.parse(savedSession);
-        }
-
-        function initMeetingSelect() {
-            const select = document.getElementById('adminMeetingSelect');
-            select.innerHTML = '';
-            for(let i=8; i<=16; i++) {
-                const opt = document.createElement('option');
-                opt.value = i;
-                opt.textContent = `Pertemuan ${i}`;
-                if (i === activeSession.meeting) opt.selected = true;
-                select.appendChild(opt);
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity * 0.5})`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.fill();
+                ctx.closePath();
+                
+                // Efek pantulan cahaya di gelembung (highlight)
+                ctx.beginPath();
+                ctx.arc(this.x - this.radius * 0.3, this.y - this.radius * 0.3, this.radius * 0.2, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity + 0.2})`;
+                ctx.fill();
+                ctx.closePath();
             }
         }
 
-        function toggleSession() {
-            const meeting = parseInt(document.getElementById('adminMeetingSelect').value);
-            const pin = document.getElementById('adminPinInput').value.trim() || '1234';
+        // Inisialisasi banyak gelembung
+        function initBubbles() {
+            bubblesArray = [];
+            let numberOfBubbles = Math.floor(window.innerWidth / 15); // Jumlah menyesuaikan lebar layar
+            
+            // Batasi maksimal gelembung agar tidak berat
+            if(numberOfBubbles > 100) numberOfBubbles = 100;
 
-            if (activeSession.isOpen && activeSession.meeting === meeting) {
-                activeSession.isOpen = false;
-            } else {
-                activeSession.meeting = meeting;
-                activeSession.pin = pin;
-                activeSession.isOpen = true;
-            }
-
-            localStorage.setItem('pti_2026c_session', JSON.stringify(activeSession));
-            updateSessionUI();
-        }
-
-        function updateSessionUI() {
-            const badge = document.getElementById('sessionBadge');
-            const btn = document.getElementById('toggleSessionBtn');
-
-            document.getElementById('activeSessionInfo').textContent = `Pertemuan ${activeSession.meeting}`;
-
-            if(activeSession.isOpen) {
-                badge.className = "p-2.5 rounded-xl text-center text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-300";
-                badge.innerHTML = `<i class="fas fa-lock-open mr-1"></i> BUKA (P${activeSession.meeting} - PIN: ${activeSession.pin})`;
-                btn.className = "w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm";
-                btn.textContent = "Tutup Sesi Presensi";
-            } else {
-                badge.className = "p-2.5 rounded-xl text-center text-xs font-bold bg-slate-100 text-slate-600 border border-slate-300";
-                badge.innerHTML = `<i class="fas fa-lock mr-1"></i> TUTUP`;
-                btn.className = "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-sm";
-                btn.textContent = "Buka Sesi Presensi";
+            for (let i = 0; i < numberOfBubbles; i++) {
+                bubblesArray.push(new Bubble());
             }
         }
 
-        function changeStatus(nim, meeting, newStatus) {
-            if(!attendanceData[nim]) attendanceData[nim] = {};
-            if(newStatus) {
-                attendanceData[nim][meeting] = { status: newStatus, timestamp: new Date().toLocaleString('id-ID'), note: 'Diubah Manual oleh Dosen' };
-            } else {
-                delete attendanceData[nim][meeting];
+        // Loop Animasi
+        function animateBubbles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Bersihkan canvas
+            
+            for (let i = 0; i < bubblesArray.length; i++) {
+                bubblesArray[i].update();
+                bubblesArray[i].draw();
             }
-            localStorage.setItem('pti_2026c_attendance', JSON.stringify(attendanceData));
-            renderTable();
+            
+            requestAnimationFrame(animateBubbles);
         }
 
-        function renderTable() {
-            const tbody = document.getElementById('adminTableBody');
-            const search = document.getElementById('adminSearchInput').value.toLowerCase();
-            tbody.innerHTML = '';
-
-            studentsData.forEach((s, index) => {
-                if (search && !s.nama.toLowerCase().includes(search) && !s.nim.includes(search)) return;
-
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition border-b border-slate-200";
-
-                let hadirCount = 0;
-                let cellsHtml = '';
-
-                for(let m=1; m<=16; m++) {
-                    const rec = attendanceData[s.nim] && attendanceData[s.nim][m];
-                    const status = rec ? rec.status : '-';
-                    if(status === 'Hadir') hadirCount++;
-
-                    let badgeColor = "text-slate-400";
-                    if(status === 'Hadir') badgeColor = "font-bold text-emerald-600";
-                    if(status === 'Izin') badgeColor = "font-bold text-amber-600";
-                    if(status === 'Sakit') badgeColor = "font-bold text-blue-600";
-                    if(status === 'Alpa') badgeColor = "font-bold text-rose-600";
-
-                    cellsHtml += `
-                        <td class="p-1 text-center border-r border-slate-100">
-                            <select onchange="changeStatus('${s.nim}', ${m}, this.value)" class="text-[10px] p-0.5 rounded border border-slate-200 ${badgeColor} bg-transparent cursor-pointer">
-                                <option value="" ${status==='-'?'selected':''}>-</option>
-                                <option value="Hadir" ${status==='Hadir'?'selected':''}>H</option>
-                                <option value="Izin" ${status==='Izin'?'selected':''}>I</option>
-                                <option value="Sakit" ${status==='Sakit'?'selected':''}>S</option>
-                                <option value="Alpa" ${status==='Alpa'?'selected':''}>A</option>
-                            </select>
-                        </td>
-                    `;
-                }
-
-                const pct = Math.round((hadirCount / 16) * 100);
-
-                tr.innerHTML = `
-                    <td class="p-2 text-center text-slate-500 font-medium">${index + 1}</td>
-                    <td class="p-2 font-mono text-slate-600">${s.nim}</td>
-                    <td class="p-2 font-semibold text-slate-800">${s.nama}</td>
-                    ${cellsHtml}
-                    <td class="p-2 text-center font-bold ${pct>=80?'text-emerald-600':pct>=70?'text-amber-600':'text-rose-600'}">${pct}%</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function exportCSV() {
-            let csv = "No,NIM,Nama Mahasiswa," + Array.from({length:16}, (_,i) => `P${i+1}`).join(",") + ",Persentase Hadir\n";
-            studentsData.forEach((s, idx) => {
-                let hadir = 0;
-                let row = [idx + 1, `"${s.nim}"`, `"${s.nama}"`];
-                for(let m=1; m<=16; m++) {
-                    const st = (attendanceData[s.nim] && attendanceData[s.nim][m]) ? attendanceData[s.nim][m].status : '-';
-                    if(st === 'Hadir') hadir++;
-                    row.push(st);
-                }
-                row.push(`${Math.round((hadir/16)*100)}%`);
-                csv += row.join(",") + "\n";
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", `Rekap_Presensi_Kelas_2026C.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function resetData() {
-            if(confirm("Apakah Anda yakin ingin mereset data presensi kembali ke default (P1-P7 Hadir)?")) {
-                localStorage.removeItem('pti_2026c_attendance');
-                localStorage.removeItem('pti_2026c_session');
-                loadData();
-                renderTable();
-                updateSessionUI();
-                alert("Data berhasil direset!");
-            }
-        }
+        // Jalankan saat load
+        window.addEventListener('load', () => {
+            initBubbles();
+            animateBubbles();
+        });
     </script>
 </body>
 </html>
